@@ -114,7 +114,7 @@ cyanTrace = colorTrace ANSICyan
 whiteTrace = colorTrace ANSIWhite
 
 --------------------------------------------------------------------------------
---  Trace colored strings
+--  Show colored things
 colorShow :: Show a => ANSIColor -> a -> String
 colorShow c s = colorString c (show s)
 
