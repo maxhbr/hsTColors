@@ -36,14 +36,18 @@ instance Show ANSIColor where
       in "\27[" ++ show (30 + colorNum) ++ "m"
 
 uncolor :: String -> String
-uncolor "" = ""
-uncolor (s:ss) | s == '\27' = let 
-    uncolorDrop ""       = ""
-    uncolorDrop ('m':ss') = ss'
-    uncolorDrop (_:ss')   = uncolorDrop ss'
-  in
-    uncolor (uncolorDrop ss)
-               | otherwise  = s : uncolor ss
+uncolor ('\27':('[':(_:('m':ss))))     = uncolor ss
+uncolor ('\27':('[':(_:(_:('m':ss))))) = uncolor ss
+uncolor (s:ss)                         = s : uncolor ss
+uncolor ""                             = ""
+
+uncolLength :: String -> Int
+uncolLength = let
+  uncolLength' i ('\27':('[':(_:('m':ss))))     = uncolLength' i ss
+  uncolLength' i ('\27':('[':(_:(_:('m':ss))))) = uncolLength' i ss
+  uncolLength' i (s:ss)                         = uncolLength' (i+1) ss
+  uncolLength' i ""                             = i
+  in uncolLength' 0
 
 --------------------------------------------------------------------------------
 --  String coloring
@@ -112,6 +116,34 @@ blueTrace = colorTrace ANSIBlue
 magentaTrace = colorTrace ANSIMagenta
 cyanTrace = colorTrace ANSICyan
 whiteTrace = colorTrace ANSIWhite
+
+--------------------------------------------------------------------------------
+--  IdTrace colored strings
+colorIdTrace :: ANSIColor -> String -> String
+colorIdTrace a s = trace (colorString a s) s
+
+redIdTrace, greenIdTrace, yellowIdTrace, blueIdTrace, magentaIdTrace, cyanIdTrace, whiteIdTrace :: String -> String
+redIdTrace = colorIdTrace ANSIRed
+greenIdTrace = colorIdTrace ANSIGreen
+yellowIdTrace = colorIdTrace ANSIYellow
+blueIdTrace = colorIdTrace ANSIBlue
+magentaIdTrace = colorIdTrace ANSIMagenta
+cyanIdTrace = colorIdTrace ANSICyan
+whiteIdTrace = colorIdTrace ANSIWhite
+
+--------------------------------------------------------------------------------
+--  ShowTrace colored strings
+colorShowTrace :: (Show a) => ANSIColor -> a -> a
+colorShowTrace a x = trace (colorString a (show x)) x
+
+redShowTrace, greenShowTrace, yellowShowTrace, blueShowTrace, magentaShowTrace, cyanShowTrace, whiteShowTrace :: (Show a) => a -> a
+redShowTrace = colorShowTrace ANSIRed
+greenShowTrace = colorShowTrace ANSIGreen
+yellowShowTrace = colorShowTrace ANSIYellow
+blueShowTrace = colorShowTrace ANSIBlue
+magentaShowTrace = colorShowTrace ANSIMagenta
+cyanShowTrace = colorShowTrace ANSICyan
+whiteShowTrace = colorShowTrace ANSIWhite
 
 --------------------------------------------------------------------------------
 --  Show colored things
