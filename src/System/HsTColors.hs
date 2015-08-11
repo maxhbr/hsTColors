@@ -8,39 +8,7 @@
 --
 --------------------------------------------------------------------------------
 module System.HsTColors
-       ( HasANSICode (..)
-       , ANSINone (..), ANSICode (..), ANSIColor (..), ANSIDecoration (..)
-       , uncolor
-       , uncolLength
-       , isColored
---  String coloring
-       , colorString
-       , blackString, redString, greenString, yellowString, blueString, magentaString, cyanString, whiteString
-       , boldString, backgroundString, underlineString, blinkString
---  Show colored things
-       , colorShow
-       , blackShow, redShow, greenShow, yellowShow, blueShow, magentaShow, cyanShow, whiteShow
-       , boldShow, backgroundShow, underlineShow, blinkShow
---  Put colored strings
-       , colorPutStrLn
-       , blackPutStrLn, redPutStrLn, greenPutStrLn, yellowPutStrLn, bluePutStrLn, magentaPutStrLn, cyanPutStrLn, whitePutStrLn
-       , boldPutStrLn, backgroundPutStrLn, underlinePutStrLn, blinkPutStrLn
-       , colorPutStr
-       , blackPutStr, redPutStr, greenPutStr, yellowPutStr, bluePutStr, magentaPutStr, cyanPutStr, whitePutStr
-       , boldPutStr, backgroundPutStr, underlinePutStr, blinkPutStr
---  Print colored things
-       , colorPrint
-       , blackPrint, redPrint, greenPrint, yellowPrint, bluePrint, magentaPrint, cyanPrint, whitePrint
-       , boldPrint, backgroundPrint, underlinePrint, blinkPrint
---  Trace colored strings
-       , colorTrace
-       , blackTrace, redTrace, greenTrace, yellowTrace, blueTrace, magentaTrace, cyanTrace, whiteTrace
-       , boldTrace, backgroundTrace, underlineTrace, blinkTrace
---  IdTrace colored strings
-       , colorIdTrace
-       , blackIdTrace, redIdTrace, greenIdTrace, yellowIdTrace, blueIdTrace, magentaIdTrace, cyanIdTrace, whiteIdTrace
-       , boldIdTrace, backgroundIdTrace, underlineIdTrace, blinkIdTrace
-       ) where
+       where
 
 import Debug.Trace (trace)
 import Data.Maybe (fromJust)
@@ -88,16 +56,42 @@ instance Show ANSIColor where
   show = showANSICode
 
 --------------------------------------------------------------------------------
+data ANSIBkColor = ANSIBkBlack
+                 | ANSIBkRed
+                 | ANSIBkGreen
+                 | ANSIBkYellow
+                 | ANSIBkBlue
+                 | ANSIBkMagenta
+                 | ANSIBkCyan
+                 | ANSIBkWhite
+                 deriving (Ord,Eq)
+instance HasANSICode ANSIBkColor where
+  toANSICode ANSIBkBlack   = "40"
+  toANSICode ANSIBkRed     = "41"
+  toANSICode ANSIBkGreen   = "42"
+  toANSICode ANSIBkYellow  = "43"
+  toANSICode ANSIBkBlue    = "44"
+  toANSICode ANSIBkMagenta = "45"
+  toANSICode ANSIBkCyan    = "46"
+  toANSICode ANSIBkWhite   = "47"
+instance Show ANSIBkColor where
+  show = showANSICode
+
+--------------------------------------------------------------------------------
 data ANSIDecoration = ANSIBold
-                    | ANSIBackground
+                    | ANSICursive
                     | ANSIUnderline
                     | ANSIBlink
+                    | ANSIBackground
+                    | ANSICancel
                     deriving (Ord,Eq)
 instance HasANSICode ANSIDecoration where
   toANSICode ANSIBold       = "1"
-  toANSICode ANSIBackground = "3"
+  toANSICode ANSICursive    = "3"
   toANSICode ANSIUnderline  = "4"
   toANSICode ANSIBlink      = "5"
+  toANSICode ANSIBackground = "7"
+  toANSICode ANSICancel     = "9"
 instance Show ANSIDecoration where
   show = showANSICode
 
@@ -123,7 +117,6 @@ isColored ""                            = False
 
 --------------------------------------------------------------------------------
 --  String coloring
-
 colorString :: HasANSICode a => a -> String -> String
 colorString c s = show c ++ s ++ show ANSINone
 
@@ -136,38 +129,62 @@ blueString    = colorString ANSIBlue
 magentaString = colorString ANSIMagenta
 cyanString    = colorString ANSICyan
 whiteString   = colorString ANSIWhite
-boldString, backgroundString, underlineString, blinkString :: String -> String
+blackBkString, redBkString, greenBkString, yellowBkString, blueBkString, magentaBkString, cyanBkString, whiteBkString :: String -> String
+blackBkString   = colorString ANSIBkBlack
+redBkString     = colorString ANSIBkRed
+greenBkString   = colorString ANSIBkGreen
+yellowBkString  = colorString ANSIBkYellow
+blueBkString    = colorString ANSIBkBlue
+magentaBkString = colorString ANSIBkMagenta
+cyanBkString    = colorString ANSIBkCyan
+whiteBkString   = colorString ANSIBkWhite
+boldString, cursiveString, backgroundString, underlineString, blinkString, cancelString :: String -> String
 boldString       = colorString ANSIBold
+cursiveString    = colorString ANSICursive
 backgroundString = colorString ANSIBackground
 underlineString  = colorString ANSIUnderline
 blinkString      = colorString ANSIBlink
+cancelString     = colorString ANSICancel
 
 --------------------------------------------------------------------------------
 --  Show colored things
-colorShow :: (HasANSICode a, Show b) => a -> b -> String
-colorShow c s = colorString c (show s)
+mkColored :: (HasANSICode a, Typeable b, Show b) => a -> b -> String
+mkColored a x = colorString a $ if typeOf x == typeOf ""
+                                then (fromJust $ cast x :: String)
+                                else show x
 
-blackShow, redShow, greenShow, yellowShow, blueShow, magentaShow, cyanShow, whiteShow :: Show a => a -> String
-blackShow   = colorShow ANSIBlack
-redShow     = colorShow ANSIRed
-greenShow   = colorShow ANSIGreen
-yellowShow  = colorShow ANSIYellow
-blueShow    = colorShow ANSIBlue
-magentaShow = colorShow ANSIMagenta
-cyanShow    = colorShow ANSICyan
-whiteShow   = colorShow ANSIWhite
-boldShow, backgroundShow, underlineShow, blinkShow :: Show a => a -> String
-boldShow       = colorShow ANSIBold
-backgroundShow = colorShow ANSIBackground
-underlineShow  = colorShow ANSIUnderline
-blinkShow      = colorShow ANSIBlink
+mkBlack, mkRed, mkGreen, mkYellow, mkBlue, mkMagenta, mkCyan, mkWhite :: (Typeable b, Show b) => b -> String
+mkBlack   = mkColored ANSIBlack
+mkRed     = mkColored ANSIRed
+mkGreen   = mkColored ANSIGreen
+mkYellow  = mkColored ANSIYellow
+mkBlue    = mkColored ANSIBlue
+mkMagenta = mkColored ANSIMagenta
+mkCyan    = mkColored ANSICyan
+mkWhite   = mkColored ANSIWhite
+mkBkBlack, mkBkRed, mkBkGreen, mkBkYellow, mkBkBlue, mkBkMagenta, mkBkCyan, mkBkWhite :: (Typeable b, Show b) => b -> String
+mkBkBlack   = mkColored ANSIBkBlack
+mkBkRed     = mkColored ANSIBkRed
+mkBkGreen   = mkColored ANSIBkGreen
+mkBkYellow  = mkColored ANSIBkYellow
+mkBkBlue    = mkColored ANSIBkBlue
+mkBkMagenta = mkColored ANSIBkMagenta
+mkBkCyan    = mkColored ANSIBkCyan
+mkBkWhite   = mkColored ANSIBkWhite
+mkBold, mkCursive, mkBackground, mkUnderline, mkBlink, mkCancel :: (Typeable b, Show b) => b -> String
+mkBold       = mkColored ANSIBold
+mkCursive    = mkColored ANSICursive
+mkBackground = mkColored ANSIBackground
+mkUnderline  = mkColored ANSIUnderline
+mkBlink      = mkColored ANSIBlink
+mkCancel     = mkColored ANSICancel
 
 --------------------------------------------------------------------------------
 --  Put colored strings
-colorPutStrLn :: HasANSICode a => a -> String -> IO ()
-colorPutStrLn c = putStrLn . colorString c
+colorPutStrLn :: (HasANSICode a, Typeable b, Show b) => a -> b -> IO ()
+colorPutStrLn c = putStrLn . mkColored c
 
-blackPutStrLn, redPutStrLn, greenPutStrLn, yellowPutStrLn, bluePutStrLn, magentaPutStrLn, cyanPutStrLn, whitePutStrLn :: String -> IO ()
+blackPutStrLn, redPutStrLn, greenPutStrLn, yellowPutStrLn, bluePutStrLn, magentaPutStrLn, cyanPutStrLn, whitePutStrLn :: (Typeable b, Show b) => b -> IO ()
 blackPutStrLn   = colorPutStrLn ANSIBlack
 redPutStrLn     = colorPutStrLn ANSIRed
 greenPutStrLn   = colorPutStrLn ANSIGreen
@@ -176,17 +193,12 @@ bluePutStrLn    = colorPutStrLn ANSIBlue
 magentaPutStrLn = colorPutStrLn ANSIMagenta
 cyanPutStrLn    = colorPutStrLn ANSICyan
 whitePutStrLn   = colorPutStrLn ANSIWhite
-boldPutStrLn, backgroundPutStrLn, underlinePutStrLn, blinkPutStrLn :: String -> IO ()
-boldPutStrLn       = colorPutStrLn ANSIBold
-backgroundPutStrLn = colorPutStrLn ANSIBackground
-underlinePutStrLn  = colorPutStrLn ANSIUnderline
-blinkPutStrLn      = colorPutStrLn ANSIBlink
 
-colorPutStr :: HasANSICode a => a -> String -> IO ()
-colorPutStr c = putStr . colorString c
+colorPutStr :: (HasANSICode a, Typeable b, Show b) => a -> b -> IO ()
+colorPutStr c = putStr . mkColored c
 
-blackPutStr, redPutStr, greenPutStr, yellowPutStr, bluePutStr, magentaPutStr, cyanPutStr, whitePutStr :: String -> IO ()
-blackPutStr   = colorPutStrLn ANSIBlack
+blackPutStr, redPutStr, greenPutStr, yellowPutStr, bluePutStr, magentaPutStr, cyanPutStr, whitePutStr :: (Typeable b, Show b) => b -> IO ()
+blackPutStr   = colorPutStr ANSIBlack
 redPutStr     = colorPutStr ANSIRed
 greenPutStr   = colorPutStr ANSIGreen
 yellowPutStr  = colorPutStr ANSIYellow
@@ -194,38 +206,11 @@ bluePutStr    = colorPutStr ANSIBlue
 magentaPutStr = colorPutStr ANSIMagenta
 cyanPutStr    = colorPutStr ANSICyan
 whitePutStr   = colorPutStr ANSIWhite
-boldPutStr, backgroundPutStr, underlinePutStr, blinkPutStr :: String -> IO ()
-boldPutStr       = colorPutStr ANSIBold
-backgroundPutStr = colorPutStr ANSIBackground
-underlinePutStr  = colorPutStr ANSIUnderline
-blinkPutStr      = colorPutStr ANSIBlink
-
---------------------------------------------------------------------------------
---  Print colored things
-colorPrint :: (HasANSICode a, Show b) => a -> b -> IO ()
-colorPrint c = colorPutStrLn c . show
-
-blackPrint, redPrint, greenPrint, yellowPrint, bluePrint, magentaPrint, cyanPrint, whitePrint :: Show a => a -> IO ()
-blackPrint   = colorPrint ANSIBlack
-redPrint     = colorPrint ANSIRed
-greenPrint   = colorPrint ANSIGreen
-yellowPrint  = colorPrint ANSIYellow
-bluePrint    = colorPrint ANSIBlue
-magentaPrint = colorPrint ANSIMagenta
-cyanPrint    = colorPrint ANSICyan
-whitePrint   = colorPrint ANSIWhite
-boldPrint, backgroundPrint, underlinePrint, blinkPrint :: Show a => a -> IO ()
-boldPrint       = colorPrint ANSIBold
-backgroundPrint = colorPrint ANSIBackground
-underlinePrint  = colorPrint ANSIUnderline
-blinkPrint      = colorPrint ANSIBlink
 
 --------------------------------------------------------------------------------
 --  Trace colored strings
 colorTrace :: (HasANSICode a, Typeable b, Show b) => a -> b -> b' -> b'
-colorTrace a x = trace (colorString a $ if typeOf x == typeOf ""
-                                        then (fromJust $ cast x :: String)
-                                        else show x)
+colorTrace a x = trace (mkColored a x)
 
 blackTrace, redTrace, greenTrace, yellowTrace, blueTrace, magentaTrace, cyanTrace, whiteTrace :: (Typeable a, Show a) => a -> a' -> a'
 blackTrace   = colorTrace ANSIBlack
@@ -236,11 +221,13 @@ blueTrace    = colorTrace ANSIBlue
 magentaTrace = colorTrace ANSIMagenta
 cyanTrace    = colorTrace ANSICyan
 whiteTrace   = colorTrace ANSIWhite
-boldTrace, backgroundTrace, underlineTrace, blinkTrace :: (Typeable a, Show a) => a -> a' -> a'
+boldTrace, cursiveTrace, backgroundTrace, underlineTrace, blinkTrace, cancelTrace :: (Typeable a, Show a) => a -> a' -> a'
 boldTrace       = colorTrace ANSIBold
+cursiveTrace    = colorTrace ANSICursive
 backgroundTrace = colorTrace ANSIBackground
 underlineTrace  = colorTrace ANSIUnderline
 blinkTrace      = colorTrace ANSIBlink
+cancelTrace     = colorTrace ANSICancel
 
 --------------------------------------------------------------------------------
 --  IdTrace colored strings
@@ -256,8 +243,10 @@ blueIdTrace    = colorIdTrace ANSIBlue
 magentaIdTrace = colorIdTrace ANSIMagenta
 cyanIdTrace    = colorIdTrace ANSICyan
 whiteIdTrace   = colorIdTrace ANSIWhite
-boldIdTrace, backgroundIdTrace, underlineIdTrace, blinkIdTrace :: (Typeable a, Show a) => a -> a
+boldIdTrace, cursiveIdTrace, backgroundIdTrace, underlineIdTrace, blinkIdTrace, cancelIdTrace :: (Typeable a, Show a) => a -> a
 boldIdTrace       = colorIdTrace ANSIBold
+cursiveIdTrace    = colorIdTrace ANSICursive
 backgroundIdTrace = colorIdTrace ANSIBackground
 underlineIdTrace  = colorIdTrace ANSIUnderline
 blinkIdTrace      = colorIdTrace ANSIBlink
+cancelIdTrace     = colorIdTrace ANSICancel
