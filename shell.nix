@@ -7,7 +7,7 @@ let
   f = { mkDerivation, base, hspec, QuickCheck, stdenv }:
       mkDerivation {
         pname = "hsTColors";
-        version = "0.1.0.0";
+        version = "0.2.0.0";
         src = ./.;
         buildDepends = [ base ];
         testDepends = [ base hspec QuickCheck ];
